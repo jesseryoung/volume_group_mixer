@@ -1,0 +1,36 @@
+{
+    "name": "Volume Group Mixer StreamController Plugin",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance"
+            ]
+        }
+    },
+    "postCreateCommand": "bash .devcontainer/setup-claude.sh",
+    "runArgs": [
+        "--userns=keep-id",
+        "--security-opt=label=type:container_runtime_t"
+    ],
+    "containerEnv": {
+        "XDG_RUNTIME_DIR": "/tmp",
+        "PIPEWIRE_RUNTIME_DIR": "/tmp"
+    },
+    "mounts": [
+        {
+            "source": "${localEnv:XDG_RUNTIME_DIR}/pipewire-0",
+            "target": "/tmp/pipewire-0",
+            "type": "bind"
+        },
+        {
+            "source": "claude-auth",
+            "target": "/claude-auth",
+            "type": "volume"
+        }
+    ],
+    "remoteUser": "vscode"
+}

@@ -1,0 +1,12 @@
+[project]
+name = "volume-group-mixer"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "PyGObject>=3.52",
+    "streamcontroller-plugin-tools>=2.0.1",
+    "loguru",
+]
+
+[tool.uv]
+package = false

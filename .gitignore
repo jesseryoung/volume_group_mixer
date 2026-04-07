@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+backend/.venv/
+
+
+# Claude
+.claude/settings.local.json
