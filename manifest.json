@@ -1,11 +1,11 @@
 {
-    "id": "com_example_volumegroupmixer",
+    "id": "net_jesse-young_volumegroupmixer",
     "name": "Volume Group Mixer",
     "description": "Control PipeWire/WirePlumber audio volume groups from StreamController.",
     "version": "0.0.1",
     "min-app-version": "1.5.0",
     "app-version-stop": "",
-    "author": "example",
+    "author": "jesse@jesse-young.net",
     "github": "",
     "tags": ["audio", "pipewire", "wireplumber", "volume"],
     "thumbnail": "assets/thumbnail.png",
