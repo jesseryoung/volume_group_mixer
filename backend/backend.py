@@ -1,14 +1,14 @@
 import os
+from loguru import logger as log
+log.add(os.path.join(os.path.dirname(__file__), "backend.log"), level="DEBUG", rotation="1 MB")
+
 import threading
 
 import gi
 gi.require_version('Wp', '0.5')
 gi.require_version('GLib', '2.0')
 from gi.repository import GLib, Wp
-from loguru import logger as log
 from streamcontroller_plugin_tools import BackendBase
-
-log.add(os.path.join(os.path.dirname(__file__), "backend.log"), level="DEBUG", rotation="1 MB")
 
 
 class Backend(BackendBase):
