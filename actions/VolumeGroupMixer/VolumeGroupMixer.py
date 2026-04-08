@@ -23,19 +23,30 @@ class VolumeGroupMixerAction(DialAction):
     def _step(self) -> float:
         return self.get_settings().get("step_size", 5) / 100.0
 
-    def on_backend_ready(self) -> None:
-        self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries())
+    def on_ready(self) -> None:
         self._refresh_display()
 
+    def _ensure_registered(self) -> bool:
+        if self.plugin_base.backend is None:
+            return False
+        self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries())
+        return True
+
     def on_dial_turn_cw(self, _=None) -> None:
+        if not self._ensure_registered():
+            return
         self.plugin_base.backend.exposed_adjust_volume(self._group_id(), self._step())
         self._refresh_display()
 
     def on_dial_turn_ccw(self, _=None) -> None:
+        if not self._ensure_registered():
+            return
         self.plugin_base.backend.exposed_adjust_volume(self._group_id(), -self._step())
         self._refresh_display()
 
     def on_dial_short_up(self, _=None) -> None:
+        if not self._ensure_registered():
+            return
         self.plugin_base.backend.exposed_toggle_mute(self._group_id())
         self._refresh_display()
 
@@ -47,7 +58,7 @@ class VolumeGroupMixerAction(DialAction):
         self._refresh_display()
 
     def _refresh_display(self) -> None:
-        if self.plugin_base.backend is None:
+        if not self._ensure_registered():
             return
         s = self.get_settings()
         vol, all_muted = self.plugin_base.backend.exposed_get_group_state(self._group_id())
