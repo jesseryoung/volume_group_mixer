@@ -19,15 +19,19 @@ class Backend(BackendBase):
         self._core: Wp.Core | None = None
         self._om: Wp.ObjectManager | None = None
 
+        log.info("Backend starting")
         self._start_wireplumber()
         super().__init__()
+        log.info("Backend ready")
 
     def _start_wireplumber(self) -> None:
+        log.info("Connecting to PipeWire")
         Wp.init(Wp.InitFlags.ALL)
         self._loop = GLib.MainLoop()
         self._core = Wp.Core.new(self._loop.get_context(), None)
         if not self._core.connect():
             raise RuntimeError("Cannot connect to PipeWire")
+        log.info("Connected to PipeWire, loading plugins")
 
         pending = {"n": 2}
 
@@ -38,6 +42,7 @@ class Backend(BackendBase):
                 log.error(f"Plugin load failed: {e}")
                 return
             pending["n"] -= 1
+            log.info(f"Plugin loaded, {pending['n']} remaining")
             if pending["n"] == 0:
                 self._on_plugins_ready()
 
@@ -50,6 +55,7 @@ class Backend(BackendBase):
         threading.Thread(target=self._loop.run, daemon=True, name="wp-loop").start()
 
     def _on_plugins_ready(self) -> None:
+        log.info("Plugins ready, setting up mixer API and object manager")
         self._mixer_api = Wp.Plugin.find(self._core, "mixer-api")
         self._mixer_api.set_property("scale", 1)  # 1 = CUBIC scale
         self._mixer_api.connect("changed", self._on_volume_changed)
@@ -70,6 +76,7 @@ class Backend(BackendBase):
         if not binary:
             return
         node_id = node.get_bound_id()
+        log.info(f"Node added: {binary} (id={node_id})")
         self._nodes[node_id] = binary
         for group_id, binaries in self._groups.items():
             if binary not in binaries:
@@ -82,7 +89,9 @@ class Backend(BackendBase):
         self._update_all_caches()
 
     def _on_node_removed(self, _om, node: Wp.Node) -> None:
-        self._nodes.pop(node.get_bound_id(), None)
+        node_id = node.get_bound_id()
+        binary = self._nodes.pop(node_id, None)
+        log.info(f"Node removed: {binary} (id={node_id})")
         self._update_all_caches()
 
     def _on_volume_changed(self, _api, node_id: int) -> None:
@@ -116,6 +125,7 @@ class Backend(BackendBase):
         if not states:
             return
         min_vol = min(s[0] for s in states)
+        log.info(f"Resolved initial volume for group {group_id!r}: {round(min_vol * 100)}%")
         self._group_volume[group_id] = min_vol
         for nid in node_ids:
             self._set_vol(nid, min_vol)
@@ -134,6 +144,7 @@ class Backend(BackendBase):
                 )
 
     def exposed_register_group(self, group_id: str, binaries: list[str]) -> None:
+        log.info(f"Registering group {group_id!r} with binaries {binaries}")
         self._groups[group_id] = list(binaries)
         if group_id not in self._group_volume:
             self._group_volume[group_id] = None
@@ -160,6 +171,7 @@ class Backend(BackendBase):
                 else:
                     base = min(volumes)
                 new_vol = max(0.0, min(1.0, base + delta))
+                log.info(f"Adjusting group {group_id!r}: {round(base * 100)}% -> {round(new_vol * 100)}%")
                 self._group_volume[group_id] = new_vol
                 for nid in node_ids:
                     self._set_vol(nid, new_vol)
@@ -178,6 +190,7 @@ class Backend(BackendBase):
             if not states:
                 return False
             new_mute = not all(s[1] for s in states)
+            log.info(f"Toggling mute for group {group_id!r}: mute={new_mute}")
             for nid in node_ids:
                 s = self._get_vol(nid)
                 if s is None:

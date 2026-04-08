@@ -25,10 +25,8 @@ class VolumeGroupMixerPlugin(PluginBase):
             app_version="1.5.0",
         )
 
-        venv = os.path.join(self.PATH, "backend", ".venv")
-        if os.path.exists(venv):
-            self.launch_backend(
-                backend_path=os.path.join(self.PATH, "backend", "backend.py"),
-                venv_path=venv,
-                open_in_terminal=True,
-            )
+        self.launch_backend(
+            backend_path=os.path.join(self.PATH, "backend", "backend.py"),
+            venv_path=os.path.join(self.PATH, "backend", ".venv"),
+            open_in_terminal=True,
+        )
