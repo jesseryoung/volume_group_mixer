@@ -39,6 +39,8 @@ class VolumeGroupMixerAction(DialAction):
         self._refresh_display()
 
     def _refresh_display(self) -> None:
+        if self.plugin_base.backend is None:
+            return
         s = self.get_settings()
         vol, all_muted = self.plugin_base.backend.exposed_get_group_state(self._group_id())
         self.set_top_label(s.get("group_name", ""))
