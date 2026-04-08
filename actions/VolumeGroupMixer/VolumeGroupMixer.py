@@ -5,7 +5,6 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk
 
-from src.backend.DeckManagement.InputIdentifier import Input
 from src.backend.PluginManager.InputBases import DialAction
 
 
@@ -28,14 +27,16 @@ class VolumeGroupMixerAction(DialAction):
         self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries())
         self._refresh_display()
 
-    def event_callback(self, event, _data: dict = None) -> None:
-        b = self.plugin_base.backend
-        if event == Input.Dial.Events.TURN_CW:
-            b.exposed_adjust_volume(self._group_id(), self._step())
-        elif event == Input.Dial.Events.TURN_CCW:
-            b.exposed_adjust_volume(self._group_id(), -self._step())
-        elif event == Input.Dial.Events.SHORT_UP:
-            b.exposed_toggle_mute(self._group_id())
+    def on_dial_turn_cw(self) -> None:
+        self.plugin_base.backend.exposed_adjust_volume(self._group_id(), self._step())
+        self._refresh_display()
+
+    def on_dial_turn_ccw(self) -> None:
+        self.plugin_base.backend.exposed_adjust_volume(self._group_id(), -self._step())
+        self._refresh_display()
+
+    def on_dial_short_up(self) -> None:
+        self.plugin_base.backend.exposed_toggle_mute(self._group_id())
         self._refresh_display()
 
     def on_tick(self) -> None:
@@ -81,7 +82,11 @@ class VolumeGroupMixerAction(DialAction):
 
         running_group = Adw.PreferencesGroup(title="Active audio streams")
         for binary in self.plugin_base.backend.exposed_get_running_binaries():
-            running_group.add(Adw.ActionRow(title=binary))
+            row = Adw.ActionRow(title=binary, activatable=True)
+            add_icon = Gtk.Image.new_from_icon_name("list-add-symbolic")
+            row.add_suffix(add_icon)
+            row.connect("activated", self._on_running_binary_activated, binary, binaries_group)
+            running_group.add(row)
         rows.append(running_group)
 
         return rows
@@ -109,6 +114,13 @@ class VolumeGroupMixerAction(DialAction):
         row = self._make_binary_row("")
         group.add(row)
         self._binary_rows.append(row)
+
+    def _on_running_binary_activated(self, _row, binary: str, binaries_group: Adw.PreferencesGroup) -> None:
+        if binary not in [r.get_text() for r in self._binary_rows]:
+            row = self._make_binary_row(binary)
+            binaries_group.add(row)
+            self._binary_rows.append(row)
+            self._save_binaries()
 
     def _save_binaries(self) -> None:
         s = self.get_settings()

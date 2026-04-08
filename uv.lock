@@ -94,14 +94,12 @@ name = "volume-group-mixer"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "loguru" },
     { name = "pulsectl" },
     { name = "streamcontroller-plugin-tools" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "loguru" },
     { name = "pulsectl" },
     { name = "streamcontroller-plugin-tools", specifier = ">=2.0.1" },
 ]
