@@ -1,5 +1,5 @@
 {
-    "id": "net_jesse-young_volumegroupmixer",
+    "id": "net_jesseyoung_volumegroupmixer",
     "name": "Volume Group Mixer",
     "description": "Control PipeWire/WirePlumber audio volume groups from StreamController.",
     "version": "0.0.1",

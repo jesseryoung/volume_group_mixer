@@ -13,7 +13,7 @@ class VolumeGroupMixerPlugin(PluginBase):
         self.action_holder = ActionHolder(
             plugin_base=self,
             action_base=VolumeGroupMixerAction,
-            action_id="net_jesse-young_volumegroupmixer::VolumeGroupMixer",
+            action_id="net_jesseyoung_volumegroupmixer::VolumeGroupMixer",
             action_name="Volume Group Mixer",
         )
         self.add_action_holder(self.action_holder)
@@ -25,8 +25,10 @@ class VolumeGroupMixerPlugin(PluginBase):
             app_version="1.5.0",
         )
 
-        self.launch_backend(
-            backend_path=os.path.join(self.PATH, "backend", "backend.py"),
-            venv_path=os.path.join(self.PATH, "backend", ".venv"),
-            open_in_terminal=False,
-        )
+        venv = os.path.join(self.PATH, "backend", ".venv")
+        if os.path.exists(venv):
+            self.launch_backend(
+                backend_path=os.path.join(self.PATH, "backend", "backend.py"),
+                venv_path=venv,
+                open_in_terminal=False,
+            )
