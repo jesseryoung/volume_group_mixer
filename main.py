@@ -30,5 +30,5 @@ class VolumeGroupMixerPlugin(PluginBase):
             self.launch_backend(
                 backend_path=os.path.join(self.PATH, "backend", "backend.py"),
                 venv_path=venv,
-                open_in_terminal=False,
+                open_in_terminal=True,
             )

@@ -22,16 +22,11 @@ class VolumeGroupMixerAction(DialAction):
         return self.get_settings().get("step_size", 5) / 100.0
 
     def on_backend_ready(self) -> None:
-        b = self.plugin_base.backend
-        if b is None:
-            return
-        b.exposed_register_group(self._group_id(), self._binaries())
+        self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries())
         self._refresh_display()
 
     def event_callback(self, event, data: dict = None) -> None:
         b = self.plugin_base.backend
-        if b is None:
-            return
         if event == Input.Dial.Events.TURN_CW:
             b.exposed_adjust_volume(self._group_id(), self._step())
         elif event == Input.Dial.Events.TURN_CCW:
@@ -44,16 +39,10 @@ class VolumeGroupMixerAction(DialAction):
         self._refresh_display()
 
     def _refresh_display(self) -> None:
-        b = self.plugin_base.backend
-        if b is None:
-            return
         s = self.get_settings()
-        vol, all_muted = b.exposed_get_group_state(self._group_id())
+        vol, all_muted = self.plugin_base.backend.exposed_get_group_state(self._group_id())
         self.set_top_label(s.get("group_name", ""))
-        if vol is None:
-            self.set_bottom_label("???")
-        else:
-            self.set_bottom_label(f"{'M ' if all_muted else ''}{round(vol * 100)}%")
+        self.set_bottom_label(f"{'M ' if all_muted else ''}{round(vol * 100)}%" if vol is not None else "???")
 
     def get_config_rows(self) -> list:
         s = self.get_settings()
@@ -81,11 +70,9 @@ class VolumeGroupMixerAction(DialAction):
         rows.append(binaries_group)
         rows.append(add_btn)
 
-        running_group = Adw.PreferencesGroup(title="Running apps")
-        b = self.plugin_base.backend
-        if b is not None:
-            for binary in b.exposed_get_running_binaries():
-                running_group.add(Adw.ActionRow(title=binary))
+        running_group = Adw.PreferencesGroup(title="Active audio streams")
+        for binary in self.plugin_base.backend.exposed_get_running_binaries():
+            running_group.add(Adw.ActionRow(title=binary))
         rows.append(running_group)
 
         return rows
@@ -116,6 +103,4 @@ class VolumeGroupMixerAction(DialAction):
         s = self.get_settings()
         s["binaries"] = [r.get_text() for r in self._binary_rows if r.get_text()]
         self.set_settings(s)
-        b = self.plugin_base.backend
-        if b is not None:
-            b.exposed_register_group(self._group_id(), s["binaries"])
+        self.plugin_base.backend.exposed_register_group(self._group_id(), s["binaries"])
