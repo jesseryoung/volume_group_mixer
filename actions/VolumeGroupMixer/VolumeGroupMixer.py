@@ -1,19 +1,16 @@
-import os
-
 import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk
 
 from src.backend.DeckManagement.InputIdentifier import Input
-from src.backend.PluginManager.ActionBase import ActionBase
+from src.backend.PluginManager.InputBases import DialAction
 
 
-class VolumeGroupMixerAction(ActionBase):
+class VolumeGroupMixerAction(DialAction):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._binary_rows: list[Adw.EntryRow] = []
-        self._registered = False
 
     def _group_id(self) -> str:
         return str(self.input_ident)
@@ -24,17 +21,11 @@ class VolumeGroupMixerAction(ActionBase):
     def _step(self) -> float:
         return self.get_settings().get("step_size", 5) / 100.0
 
-    def _ensure_registered(self) -> None:
-        if self._registered:
-            return
+    def on_backend_ready(self) -> None:
         b = self.plugin_base.backend
         if b is None:
             return
         b.exposed_register_group(self._group_id(), self._binaries())
-        self._registered = True
-
-    def on_ready(self) -> None:
-        self._ensure_registered()
         self._refresh_display()
 
     def event_callback(self, event, data: dict = None) -> None:
@@ -50,7 +41,6 @@ class VolumeGroupMixerAction(ActionBase):
         self._refresh_display()
 
     def on_tick(self) -> None:
-        self._ensure_registered()
         self._refresh_display()
 
     def _refresh_display(self) -> None:
@@ -64,9 +54,6 @@ class VolumeGroupMixerAction(ActionBase):
             self.set_bottom_label("???")
         else:
             self.set_bottom_label(f"{'M ' if all_muted else ''}{round(vol * 100)}%")
-        icon = s.get("icon_path", "")
-        if icon and os.path.exists(icon):
-            self.set_media(media_path=icon, size=0.75)
 
     def get_config_rows(self) -> list:
         s = self.get_settings()
@@ -82,13 +69,6 @@ class VolumeGroupMixerAction(ActionBase):
         step_row.set_value(s.get("step_size", 5))
         step_row.connect("notify::value", self._on_step_changed)
         rows.append(step_row)
-
-        icon_row = Adw.ActionRow(title="Icon")
-        icon_btn = Gtk.Button(label="Choose…")
-        icon_btn.set_valign(Gtk.Align.CENTER)
-        icon_btn.connect("clicked", self._on_icon_clicked)
-        icon_row.add_suffix(icon_btn)
-        rows.append(icon_row)
 
         binaries_group = Adw.PreferencesGroup(title="App binaries")
         self._binary_rows = []
@@ -120,24 +100,6 @@ class VolumeGroupMixerAction(ActionBase):
         s = self.get_settings()
         s["step_size"] = int(spin.get_value())
         self.set_settings(s)
-
-    def _on_icon_clicked(self, btn) -> None:
-        dialog = Gtk.FileDialog()
-        f = Gtk.FileFilter()
-        f.add_pixbuf_formats()
-        dialog.set_default_filter(f)
-        dialog.open(None, None, self._on_icon_chosen)
-
-    def _on_icon_chosen(self, dialog, result) -> None:
-        try:
-            f = dialog.open_finish(result)
-            path = f.get_path()
-        except Exception:
-            return
-        s = self.get_settings()
-        s["icon_path"] = path
-        self.set_settings(s)
-        self._refresh_display()
 
     def _make_binary_row(self, value: str) -> Adw.EntryRow:
         row = Adw.EntryRow(title="Binary name")
