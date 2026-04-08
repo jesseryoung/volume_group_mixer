@@ -1,7 +1,4 @@
-import os
 import threading
-from loguru import logger as log
-log.add(os.path.join(os.path.dirname(__file__), "backend.log"), level="DEBUG", rotation="1 MB")
 
 import pulsectl
 from streamcontroller_plugin_tools import BackendBase
@@ -14,9 +11,7 @@ class Backend(BackendBase):
         self._group_state: dict[str, tuple[float | None, bool]] = {}
         self._lock = threading.Lock()
         self._pulse = pulsectl.Pulse("volume-group-mixer")
-        log.info("Connected to PulseAudio")
         super().__init__()
-        log.info("Backend ready")
 
     def _sink_inputs_for_group(self, group_id: str) -> list:
         binaries = self._groups.get(group_id, [])
@@ -50,7 +45,6 @@ class Backend(BackendBase):
         )
 
     def exposed_register_group(self, group_id: str, binaries: list[str]) -> None:
-        log.info(f"Registering group {group_id!r} with binaries {binaries}")
         with self._lock:
             self._groups[group_id] = list(binaries)
             if group_id not in self._group_volume:
@@ -67,7 +61,6 @@ class Backend(BackendBase):
             tracked = self._group_volume.get(group_id)
             base = tracked if tracked is not None and (max(vols) - min(vols) <= 0.005) else min(vols)
             new_vol = max(0.0, min(1.0, base + delta))
-            log.info(f"Adjusting group {group_id!r}: {round(base * 100)}% -> {round(new_vol * 100)}%")
             self._group_volume[group_id] = new_vol
             for si in sis:
                 self._set_vol(si, new_vol)
@@ -79,7 +72,6 @@ class Backend(BackendBase):
             if not sis:
                 return
             new_mute = not all(self._get_vol(si)[1] for si in sis)
-            log.info(f"Toggling mute for group {group_id!r}: mute={new_mute}")
             for si in sis:
                 self._pulse.mute(si, new_mute)
             self._update_cache(group_id)
