@@ -1,3 +1,5 @@
+import time
+
 import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -11,6 +13,7 @@ class VolumeGroupMixerAction(DialAction):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._binary_rows: list[Adw.EntryRow] = []
+        self._last_tick: float = 0.0
 
     def _group_id(self) -> str:
         return str(self.input_ident)
@@ -25,7 +28,7 @@ class VolumeGroupMixerAction(DialAction):
         self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries())
         self._refresh_display()
 
-    def event_callback(self, event, data: dict = None) -> None:
+    def event_callback(self, event, _data: dict = None) -> None:
         b = self.plugin_base.backend
         if event == Input.Dial.Events.TURN_CW:
             b.exposed_adjust_volume(self._group_id(), self._step())
@@ -36,6 +39,10 @@ class VolumeGroupMixerAction(DialAction):
         self._refresh_display()
 
     def on_tick(self) -> None:
+        now = time.monotonic()
+        if now - self._last_tick < 1.0:
+            return
+        self._last_tick = now
         self._refresh_display()
 
     def _refresh_display(self) -> None:
@@ -93,7 +100,9 @@ class VolumeGroupMixerAction(DialAction):
     def _make_binary_row(self, value: str) -> Adw.EntryRow:
         row = Adw.EntryRow(title="Binary name")
         row.set_text(value)
-        row.connect("notify::text", lambda *_: self._save_binaries())
+        focus_ctrl = Gtk.EventControllerFocus()
+        focus_ctrl.connect("leave", lambda _: self._save_binaries())
+        row.add_controller(focus_ctrl)
         return row
 
     def _add_binary_row(self, group: Adw.PreferencesGroup) -> None:
