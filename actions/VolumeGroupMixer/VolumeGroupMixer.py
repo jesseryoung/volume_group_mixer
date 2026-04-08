@@ -27,15 +27,15 @@ class VolumeGroupMixerAction(DialAction):
         self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries())
         self._refresh_display()
 
-    def on_dial_turn_cw(self) -> None:
+    def on_dial_turn_cw(self, _=None) -> None:
         self.plugin_base.backend.exposed_adjust_volume(self._group_id(), self._step())
         self._refresh_display()
 
-    def on_dial_turn_ccw(self) -> None:
+    def on_dial_turn_ccw(self, _=None) -> None:
         self.plugin_base.backend.exposed_adjust_volume(self._group_id(), -self._step())
         self._refresh_display()
 
-    def on_dial_short_up(self) -> None:
+    def on_dial_short_up(self, _=None) -> None:
         self.plugin_base.backend.exposed_toggle_mute(self._group_id())
         self._refresh_display()
 
