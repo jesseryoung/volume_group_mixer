@@ -1,2 +1,3 @@
 streamcontroller-plugin-tools>=2.0.1
 loguru
+pulsectl

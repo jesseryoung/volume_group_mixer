@@ -18,12 +18,18 @@
     ],
     "containerEnv": {
         "XDG_RUNTIME_DIR": "/tmp",
-        "PIPEWIRE_RUNTIME_DIR": "/tmp"
+        "PIPEWIRE_RUNTIME_DIR": "/tmp",
+        "PULSE_SERVER": "unix:/tmp/pulse/native"
     },
     "mounts": [
         {
             "source": "${localEnv:XDG_RUNTIME_DIR}/pipewire-0",
             "target": "/tmp/pipewire-0",
+            "type": "bind"
+        },
+        {
+            "source": "${localEnv:XDG_RUNTIME_DIR}/pulse/native",
+            "target": "/tmp/pulse/native",
             "type": "bind"
         },
         {
