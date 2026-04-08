@@ -13,7 +13,7 @@ class VolumeGroupMixerPlugin(PluginBase):
         self.action_holder = ActionHolder(
             plugin_base=self,
             action_base=VolumeGroupMixerAction,
-            action_id="com_example_volumegroupmixer::VolumeGroupMixer",
+            action_id="net_jesse-young_volumegroupmixer::VolumeGroupMixer",
             action_name="Volume Group Mixer",
         )
         self.add_action_holder(self.action_holder)
