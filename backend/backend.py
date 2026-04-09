@@ -1,8 +1,11 @@
+import os
 import threading
 
 import pulsectl
 from loguru import logger
 from streamcontroller_plugin_tools import BackendBase
+
+logger.add(os.path.join(os.path.dirname(__file__), "backend.log"))
 
 
 class Backend(BackendBase):
