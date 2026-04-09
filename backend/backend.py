@@ -1,6 +1,7 @@
 import threading
 
 import pulsectl
+from loguru import logger
 from streamcontroller_plugin_tools import BackendBase
 
 
@@ -11,6 +12,7 @@ class Backend(BackendBase):
         self._group_state: dict[str, tuple[float | None, bool]] = {}
         self._lock = threading.Lock()
         self._pulse = pulsectl.Pulse("volume-group-mixer")
+        logger.info("Backend initialized")
         super().__init__()
 
     def _sink_inputs_for_group(self, group_id: str) -> list:
@@ -50,6 +52,9 @@ class Backend(BackendBase):
             if group_id not in self._group_volume:
                 self._group_volume[group_id] = None
                 self._resolve_initial_volume(group_id)
+                logger.info("Registered group {} with binaries {}, initial volume={}", group_id, binaries, self._group_volume[group_id])
+            else:
+                logger.info("Updated group {} binaries={}", group_id, binaries)
             self._update_cache(group_id)
 
     def exposed_adjust_volume(self, group_id: str, delta: float) -> None:

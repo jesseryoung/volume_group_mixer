@@ -13,6 +13,7 @@ class VolumeGroupMixerAction(DialAction):
         super().__init__(*args, **kwargs)
         self._binary_rows: list[Adw.EntryRow] = []
         self._last_tick: float = 0.0
+        self._registered: bool = False
 
     def _group_id(self) -> str:
         return str(self.input_ident)
@@ -29,7 +30,9 @@ class VolumeGroupMixerAction(DialAction):
     def _ensure_registered(self) -> bool:
         if self.plugin_base.backend is None:
             return False
-        self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries())
+        if not self._registered:
+            self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries())
+            self._registered = True
         return True
 
     def on_dial_turn_cw(self, _=None) -> None:
