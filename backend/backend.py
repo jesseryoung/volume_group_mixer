@@ -13,10 +13,52 @@ class Backend(BackendBase):
         self._groups: dict[str, list[str]] = {}
         self._group_volume: dict[str, float | None] = {}
         self._group_state: dict[str, tuple[float | None, bool]] = {}
+        self._callbacks: dict[str, object] = {}
         self._lock = threading.Lock()
         self._pulse = pulsectl.Pulse("volume-group-mixer")
+        threading.Thread(target=self._event_loop, daemon=True).start()
         logger.info("Backend initialized")
         super().__init__()
+
+    def _event_loop(self) -> None:
+        new_indices: list[int] = []
+
+        def on_event(ev) -> None:
+            if ev.facility == pulsectl.PulseEventFacilityEnum.sink_input and ev.t == pulsectl.PulseEventTypeEnum.new:
+                new_indices.append(ev.index)
+            pulse.event_listen_stop()
+
+        with pulsectl.Pulse("volume-group-mixer-events") as pulse:
+            pulse.event_mask_set("sink_input")
+            pulse.event_callback_set(on_event)
+            while True:
+                new_indices.clear()
+                pulse.event_listen(timeout=5)
+                for index in list(new_indices):
+                    self._on_new_sink_input(index)
+
+    def _on_new_sink_input(self, index: int) -> None:
+        callbacks_to_call = []
+        with self._lock:
+            si = next((s for s in self._pulse.sink_input_list() if s.index == index), None)
+            if si is None:
+                return
+            binary = si.proplist.get("application.process.binary")
+            if not binary:
+                return
+            for group_id, binaries in self._groups.items():
+                if binary in binaries:
+                    tracked = self._group_volume.get(group_id)
+                    if tracked is not None:
+                        self._set_vol(si, tracked)
+                        logger.info("New sink input {} ({}): snapped to group {} volume {:.2f}", index, binary, group_id, tracked)
+                    if group_id in self._callbacks:
+                        callbacks_to_call.append(self._callbacks[group_id])
+        for cb in callbacks_to_call:
+            try:
+                cb()
+            except Exception:
+                pass
 
     def _sink_inputs_for_group(self, group_id: str) -> list:
         binaries = self._groups.get(group_id, [])
@@ -49,9 +91,11 @@ class Backend(BackendBase):
             all(s[1] for s in states),
         )
 
-    def exposed_register_group(self, group_id: str, binaries: list[str]) -> None:
+    def exposed_register_group(self, group_id: str, binaries: list[str], on_state_change=None) -> None:
         with self._lock:
             self._groups[group_id] = list(binaries)
+            if on_state_change is not None:
+                self._callbacks[group_id] = on_state_change
             if group_id not in self._group_volume:
                 self._group_volume[group_id] = None
                 self._resolve_initial_volume(group_id)

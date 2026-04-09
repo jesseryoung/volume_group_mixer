@@ -31,7 +31,7 @@ class VolumeGroupMixerAction(DialAction):
         if self.plugin_base.backend is None:
             return False
         if not self._registered:
-            self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries())
+            self.plugin_base.backend.exposed_register_group(self._group_id(), self._binaries(), self._refresh_display)
             self._registered = True
         return True
 
