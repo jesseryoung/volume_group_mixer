@@ -20,7 +20,7 @@ class VolumeGroupMixerPlugin(PluginBase):
 
         self.register(
             plugin_name="Volume Group Mixer",
-            github_repo="",
+            github_repo="https://github.com/jesseryoung/volume_group_mixer",
             plugin_version="0.0.1",
             app_version="1.5.0",
         )
